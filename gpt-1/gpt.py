@@ -140,6 +140,14 @@ class GPTLanguageModel(nn.Module):
     def __init__(self):
         super().__init__()
         # each token directly reads off the logits for the next token from a lookup table
+
+        # See here that the vocab is represented as a matrix of weights so more vocab means more weights/nodes/parameters
+        # At the end the final layer predicts the logits representing a predicted probability for each token in the vocab
+
+        # If we want to add special tokens ie. finetuning
+        # Resize the first embedding/add rows initialize the weight to be small numbers 
+        # Extend the weight in the last linear layer to include the new tokens - dot products
+        # Freeze the base model and introduce the new tokens - minor surgery
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
         self.blocks = nn.Sequential(*[Block(n_embd, n_head=n_head) for _ in range(n_layer)])
