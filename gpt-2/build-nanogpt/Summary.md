@@ -21,5 +21,10 @@
    - tokens_processed = train_loader.B * train_loader.T * grad_accum_steps * ddp_world_size
 
 - Pre-training on the FineWeb dataset
+- Validation set, generate text - classic train and validation shard split and run on validation set every 250 steps
+- HellaSwag dataset for evaluation; show early signal - model improving from 25%  change to answering correctly to more and more accurate answers
+   - Multiple choice - 4 options dataset - so we construct a batch of 4 rows/ B = 4, and T tokens, the context tokens are shared within the problem/batch. And, The 4 options may be different length so take the longest, (padded dimensions); we need tokens, correct label, mask which tokens are active. Look at the options and average them up and pick the option with the highest logit/probabilities for the completion. (Or looking at the row with the lowest average loss)
+- Later for Multi-epoch runs - permute the shards in the data
+   - Observations we can get away with 3x lr and also GPT 3 T(sequence length) is twice the size 
 
 

@@ -254,6 +254,7 @@ class DataLoaderLite:  # Goes through the file in chunks
         print(f"1 epoch = {len(self.tokens) // (self.B * self.T)} batches")
         self.current_position = self.B * self.T * self.process_rank
 
+    # For the validation set - reset the shard data for evaluation
     def reset(self):
         # state, init at shard zero
         self.current_shard = 0
@@ -355,6 +356,8 @@ if master_process:
     print(f"=> calculated gradient accumulation steps: {grad_accum_steps}")
 
 train_loader = DataLoaderLite(B=B, T=T, process_rank=ddp_rank, num_processes=ddp_world_size, split="train")
+
+# Dataloader specific for the validation set
 val_loader = DataLoaderLite(B=B, T=T, process_rank=ddp_rank, num_processes=ddp_world_size, split="val")
 
 torch.set_float32_matmul_precision('high')
@@ -372,6 +375,8 @@ raw_model = model.module if ddp else model # always contains the "raw" unwrapped
 
 max_lr = 6e-4
 min_lr = max_lr * 0.1
+##### IMPORTANT #####
+# For the new dataset we have to recalculate the number of steps 
 warmup_steps = 715  # Paper says warmup the learning rate for 375 million tokens = 375 million tokens / 2^19 (tokens per step) = 715 steps
 max_steps = 19073 # 19,073 steps is ~1 epoch, if data is 10B tokens and batch size 0.5M tokens
 # 10e9 (10 billion tokens) / 2^19(tokens per step) = 19073 steps 
@@ -403,6 +408,7 @@ for step in range(max_steps):
     last_step = (step == max_steps - 1)
 
     # once in a while evaluate our validation loss
+    # Every 250 steps - run the validation set and calculate the loss and see if we overfit
     if step % 250 == 0 or last_step:
         model.eval()
         val_loader.reset()
